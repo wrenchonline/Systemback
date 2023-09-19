@@ -60,12 +60,29 @@ sb::exec("chroot /.sbsystemcopy sh /usr/bin/set_grub_password.sh");
 sed -i 's/CLASS="--class gnu-linux --class gnu --class os"/CLASS="--class gnu-linux --class gnu --class os --unrestricted"/' /etc/grub.d/10_linux
 ```
 
-2. ubuntu禁用快捷键
+3. ubuntu禁用快捷键
 ```shell
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-up []
 ```
 
+4. 禁用plymouth给串口输出数据
+编辑  `/etc/default/grub` 文件
+```shell
+sudo vim /etc/default/grub
+```
 
+找到 `GRUB_CMDLINE_LINUX_DEFAULT 字段` 在后面添加 `plymouth.ignore-serial-consoles`
+```shell
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash plymouth.ignore-serial-consoles"
+```
+意思是禁用plymouth给串口输出数据，这样开机页面就会显示不会输出给串口。
+
+在添加输入
+```shell
+GRUB_CMDLINE_LINUX="console=ttyS0,115200"
+GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1"
+```
+目的是给机架用串口修改程序。
 
 
 
@@ -118,3 +135,7 @@ dd  if=(iso文件) of=/dev/sdX
 进入 systemback\debian\source\format  `3.0 (native)` 不能留有空格
 
 4. ubuntu `22.04.3` TLS 编译有错误，可以在 `20.04` TLS 编译或者`22.10`编译在拉过来，目测是readelf这个软件包版本有问题,等待修复。
+
+5. 发现windows本地拽到linux编译无效，必须用git类似的服务器进行上传在下载就可以，不知道linux在传到linux是否可以使用。
+
+6. lcheck.sh 文件必须授权可执行
