@@ -2172,6 +2172,9 @@ void systemback::systemcopy()
 
     if(ui->usersettingscopy->isVisibleTo(ui->copypanel))
     {
+        sb::exec("chroot /.sbsystemcopy systemctl stop ospd-openvas");
+        sb::exec("chroot /.sbsystemcopy systemctl stop glint");
+        sb::exec("chroot /.sbsystemcopy systemctl stop redis");
         // sb::exec("chroot /.sbsystemcopy sh /usr/bin/set_grub_password.sh");
         if(sb::exec("chroot /.sbsystemcopy sh -c \"for rmuser in $(grep :\\$6\\$* /etc/shadow | cut -d : -f 1) ; do [ $rmuser = " % guname() % " ] || [ $rmuser = root ] || userdel $rmuser ; done\"")) return err();
         QStr nfile;
@@ -2540,6 +2543,8 @@ void systemback::systemcopy()
         //***************
         sb::exec("chroot /.sbsystemcopy sh /usr/bin/set_grub_password.sh");
         sb::exec("chroot /.sbsystemcopy systemctl set-default multi-user");
+        sb::exec("chroot /.sbsystemcopy systemctl stop ospd-openvas");
+
 
 
         if(intrrpt) return err();

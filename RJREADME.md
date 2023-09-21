@@ -3,7 +3,6 @@
 ### 如果减少代码开发，那么有些事情在备份系统前需要提前做。
 
 1. 设置grub超时设置,打开/etc/default/grub
-
 ```shell
 sudo vim /etc/default/grub
 ```
@@ -36,8 +35,8 @@ echo "GRUB random password set successfully"
 sed -i 's/CLASS="--class gnu-linux --class gnu --class os"/CLASS="--class gnu-linux --class gnu --class os --unrestricted"/' /etc/grub.d/10_linux
 
 echo "在 /etc/grub.d/10_linux 文件中添加了 --unrestricted 标志"
-update-grub
 
+update-grub
 ```
 
 之后把这个文件放入/usr/bin/set_grub_password.sh
@@ -47,23 +46,21 @@ cp set_grub_password.sh /usr/bin/set_grub_password.sh
 sudo chmod +x /usr/bin/set_grub_password.sh
 ```
 
-原因如下我在 [systemback::systemcopy()](systemback/systemback/systemback.cpp#L2537) 函数中执行这一行:
+
+原因如下我在 [systemback::systemcopy()](systemback/systemback/systemback.cpp#L2541) 函数中执行这一行:
 ```c++
 sb::exec("chroot /.sbsystemcopy sh /usr/bin/set_grub_password.sh");
 ```
 所以这个路径拷贝是必须要做的。
 
 
-这个代码的目的就是设置grub密码和保护菜单注意这段代码需要优化，很可能匹配不对导致失败，实际上就是在`CLASS="(系统内容)"`上加个 `--unrestricted`,意思是grub只保护菜单编辑，不保护菜单启动
+这个代码的目的就是设置grub密码和保护菜单注意这段代码需要优化，很可能匹配不对导致失败，实际上就是在`CLASS="(系统内容)"`上加个 `--unrestricted`,意思是grub只保护菜单编辑，不保护菜单启动。
 
 ```shell
 sed -i 's/CLASS="--class gnu-linux --class gnu --class os"/CLASS="--class gnu-linux --class gnu --class os --unrestricted"/' /etc/grub.d/10_linux
 ```
 
-3. ubuntu禁用快捷键
-```shell
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-up []
-```
+3. ubuntu禁用快捷键,直接在终端设置那禁用几个关键的快捷方式。
 
 4. 禁用plymouth给串口输出数据
 编辑  `/etc/default/grub` 文件
@@ -77,12 +74,55 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash plymouth.ignore-serial-consoles"
 ```
 意思是禁用plymouth给串口输出数据，这样开机页面就会显示不会输出给串口。
 
-在添加输入
+在添加串口输入
 ```shell
 GRUB_CMDLINE_LINUX="console=ttyS0,115200"
 GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1"
 ```
 目的是给机架用串口修改程序。
+
+退出保存：
+```shell
+sudo update-grub
+```
+
+
+5. 禁用tty终端，使用超级用户权限编辑`/etc/default/console-setup`文件。修改 `ACTIVE_CONSOLES` 字段。
+```shell
+ACTIVE_CONSOLES=""
+```
+第二步
+```shell
+vim /etc/systemd/logind.conf
+#找到 NAutoVTs设置为0
+NAutoVTs=0 #可以关闭终端
+```
+第三步
+```shell
+for i in {2..11}; do
+  systemctl mask getty@tty${i}.service
+done
+#可以关闭除tty1以外的终端。目前图像可能也占用一个tty，明天备份在测试一次
+```
+
+
+6. 设置logo,具体参考另一个README.
+
+
+7. 设置屏息为从不，登录页面开机自动启动。目的是pe引导盘安装的时候避免输入用户密码导致用户无法操作。
+
+
+8. 设置触摸屏活动边框,禁用的原因是有些触摸屏不可以激活活动边框从而跳出到systemback界面的外面，进行恶意操作，这是不允许。
+```shell
+gsettings set org.gnome.shell enable-hot-corners false
+```
+
+9. 重启
+```shell
+reboot
+```
+
+
 
 
 
